@@ -1,0 +1,94 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing, linting & type-checking caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Environment variables & local secret overrides
+.env
+.env.*
+!.env.example
+config/config2.yaml
+config/*.local.yaml
+config/*.local.yml
+
+# Datasets & compressed archives (e.g., iPinYou raw logs & normalized pickles)
+/assets/
+/ipinyouData/
+/data/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+*.pickle
+*.pkl
+*.parquet
+*.feather
+
+# Model weights, LP solver files & generated checkpoints
+/checkpoint/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.joblib
+*.h5
+*.hdf5
+*.mps
+*.lp
+*.sol
+
+# MetaGPT & RTBAgent runtime workspace, logs & scratch files
+/workspace/
+/logs/
+/tmp/
+*.log
+
+# IDEs, editors & OS metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

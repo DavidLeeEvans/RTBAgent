@@ -44,8 +44,8 @@ def get_metagpt_root():
 
 
 # METAGPT PROJECT ROOT AND VARS
-CONFIG_ROOT = Path("/path/RTBAgent/config") # Path.home() / ".metagpt"
-METAGPT_ROOT = Path("/path/RTBAgent")  #get_metagpt_root()  # Dependent on METAGPT_PROJECT_ROOT
+METAGPT_ROOT = get_metagpt_root()
+CONFIG_ROOT = Path(os.getenv("METAGPT_CONFIG_ROOT", str(METAGPT_ROOT / "config")))
 DEFAULT_WORKSPACE_ROOT = METAGPT_ROOT / "workspace"
 
 EXAMPLE_PATH = METAGPT_ROOT / "examples"

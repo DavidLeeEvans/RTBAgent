@@ -10,44 +10,36 @@ from enum import Enum
 from metagpt.actions.action import Action
 from metagpt.actions.action_output import ActionOutput
 from metagpt.actions.add_requirement import UserRequirement
-from metagpt.actions.debug_error import DebugError
-from metagpt.actions.design_api import WriteDesign
-from metagpt.actions.design_api_review import DesignReview
-from metagpt.actions.project_management import WriteTasks
-from metagpt.actions.research import CollectLinks, WebBrowseAndSummarize, ConductResearch
-from metagpt.actions.run_code import RunCode
-from metagpt.actions.search_and_summarize import SearchAndSummarize
-from metagpt.actions.write_code import WriteCode
-from metagpt.actions.write_code_review import WriteCodeReview
-from metagpt.actions.write_prd import WritePRD
-from metagpt.actions.write_prd_review import WritePRDReview
-from metagpt.actions.write_test import WriteTest
-from metagpt.actions.di.execute_nb_code import ExecuteNbCode
-from metagpt.actions.di.write_analysis_code import WriteAnalysisCode
-from metagpt.actions.di.write_plan import WritePlan
 
+_OPTIONAL_ACTIONS = {}
+for _enum_key, _mod_name, _cls_name in [
+    ("WRITE_PRD", "metagpt.actions.write_prd", "WritePRD"),
+    ("WRITE_PRD_REVIEW", "metagpt.actions.write_prd_review", "WritePRDReview"),
+    ("WRITE_DESIGN", "metagpt.actions.design_api", "WriteDesign"),
+    ("DESIGN_REVIEW", "metagpt.actions.design_api_review", "DesignReview"),
+    ("WRTIE_CODE", "metagpt.actions.write_code", "WriteCode"),
+    ("WRITE_CODE_REVIEW", "metagpt.actions.write_code_review", "WriteCodeReview"),
+    ("WRITE_TEST", "metagpt.actions.write_test", "WriteTest"),
+    ("RUN_CODE", "metagpt.actions.run_code", "RunCode"),
+    ("DEBUG_ERROR", "metagpt.actions.debug_error", "DebugError"),
+    ("WRITE_TASKS", "metagpt.actions.project_management", "WriteTasks"),
+    ("SEARCH_AND_SUMMARIZE", "metagpt.actions.search_and_summarize", "SearchAndSummarize"),
+    ("COLLECT_LINKS", "metagpt.actions.research", "CollectLinks"),
+    ("WEB_BROWSE_AND_SUMMARIZE", "metagpt.actions.research", "WebBrowseAndSummarize"),
+    ("CONDUCT_RESEARCH", "metagpt.actions.research", "ConductResearch"),
+    ("EXECUTE_NB_CODE", "metagpt.actions.di.execute_nb_code", "ExecuteNbCode"),
+    ("WRITE_ANALYSIS_CODE", "metagpt.actions.di.write_analysis_code", "WriteAnalysisCode"),
+    ("WRITE_PLAN", "metagpt.actions.di.write_plan", "WritePlan"),
+]:
+    try:
+        _mod = __import__(_mod_name, fromlist=[_cls_name])
+        _cls = getattr(_mod, _cls_name)
+        globals()[_cls_name] = _cls
+        _OPTIONAL_ACTIONS[_enum_key] = _cls
+    except ImportError:
+        pass
 
-class ActionType(Enum):
-    """All types of Actions, used for indexing."""
-
-    ADD_REQUIREMENT = UserRequirement
-    WRITE_PRD = WritePRD
-    WRITE_PRD_REVIEW = WritePRDReview
-    WRITE_DESIGN = WriteDesign
-    DESIGN_REVIEW = DesignReview
-    WRTIE_CODE = WriteCode
-    WRITE_CODE_REVIEW = WriteCodeReview
-    WRITE_TEST = WriteTest
-    RUN_CODE = RunCode
-    DEBUG_ERROR = DebugError
-    WRITE_TASKS = WriteTasks
-    SEARCH_AND_SUMMARIZE = SearchAndSummarize
-    COLLECT_LINKS = CollectLinks
-    WEB_BROWSE_AND_SUMMARIZE = WebBrowseAndSummarize
-    CONDUCT_RESEARCH = ConductResearch
-    EXECUTE_NB_CODE = ExecuteNbCode
-    WRITE_ANALYSIS_CODE = WriteAnalysisCode
-    WRITE_PLAN = WritePlan
+ActionType = Enum("ActionType", {"ADD_REQUIREMENT": UserRequirement, **_OPTIONAL_ACTIONS})
 
 
 __all__ = [

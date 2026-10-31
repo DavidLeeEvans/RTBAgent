@@ -1,11 +1,15 @@
 # *_*coding:utf-8 *_*
 import json
+import os
 import os.path
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 class FpBidder:
     introduction :str = """The concept of FpBidder is It is a bidding method based on linear programming modeling, which solves the problem of maximizing profits under fixed budget constraints and learns optimal parameters from historical data. In the subsequent bidding process, the parameters will be fixed to the calculated optimal value. However, when the online environment is highly dynamic, the effect will be slightly affected."""
-    def __init__(self, advertiser_id:str ,budget_ratio:str):
-        self.checkpoint_root = '/path/RTBAgent/checkpoint'
+    def __init__(self, advertiser_id:str ,budget_ratio:str, checkpoint_root: str = None):
+        self.checkpoint_root = str(checkpoint_root or os.getenv("RTB_CHECKPOINT_ROOT", str(PROJECT_ROOT / "checkpoint")))
 
         self.json_data_path  = os.path.join(self.checkpoint_root,'bid','fp_bid',"checkpoint.json")
         if os.path.exists(self.json_data_path):

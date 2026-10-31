@@ -59,3 +59,18 @@ turbo_v1:
   base_url: "https://api.agicto.cn/v1"
   api_key: ""
   repair_llm_output: true
+
+gemini:
+  api_type: "openai"
+  model: "gemini-3.5-flash-lite"
+  fallback_models:
+    - "gemini-3.1-flash-lite"
+    - "gemma-4-26b-a4b-it"
+    - "gemini-3.7-flash"
+    - "gemma-4-31b-it"
+  base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  api_key: "${GEMINI_API_KEY}"
+  max_token: 4096
+  timeout: 25
+  pricing_plan: "open-llm-model"
+  repair_llm_output: true

@@ -47,7 +47,7 @@ Please output a JSON in the following format for all analyses, with a maximum wo
 }}
 """
     name: str = "DataAnalyzer"
-    max_try_num: int = 1000
+    max_try_num: int = 5
 
     async def get_data_analysis(self,
                   role_prompt,
@@ -77,7 +77,24 @@ Please output a JSON in the following format for all analyses, with a maximum wo
                     continue
             except Exception as e:
                 logger.exception(e)
-        analysis_result_json: dict = json.loads(json_data_str)
+        if json_data_str is None or not self.check_data_integrity_and_types(json_data_str):
+            analysis_result_json = {
+                k: "Insufficient signal; neutral baseline evaluation."
+                for k in [
+                    "adjustment range for [-0.5,-0.4)",
+                    "adjustment range for [-0.4,-0.3)",
+                    "adjustment range for [-0.3,-0.2)",
+                    "adjustment range for [-0.2,-0.1)",
+                    "adjustment range for [-0.1,0.0)",
+                    "adjustment range for [0.0,0.1)",
+                    "adjustment range for [0.1,0.2)",
+                    "adjustment range for [0.2,0.3)",
+                    "adjustment range for [0.3,0.4)",
+                    "adjustment range for [0.4,0.5]",
+                ]
+            }
+        else:
+            analysis_result_json: dict = json.loads(json_data_str)
         data_analysis_text = "\n".join(
             f"- {key}: {content}" for key, content in analysis_result_json.items()
         )
@@ -85,10 +102,25 @@ Please output a JSON in the following format for all analyses, with a maximum wo
 
     @staticmethod
     def parse_output(rsp):
-        pattern = r"```json(.*)```"
+        pattern = r"```json\s*(.*?)\s*```"
         match = re.search(pattern, rsp, re.DOTALL)
+        if not match:
+            match = re.search(r"```\s*(.*?)\s*```", rsp, re.DOTALL)
         code_text = match.group(1) if match else rsp
-        cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text)
+        cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text).strip()
+        try:
+            json.loads(cleaned_json_string)
+            return cleaned_json_string
+        except Exception:
+            pass
+        brace_match = re.search(r"\{.*\}", cleaned_json_string, re.DOTALL)
+        if brace_match:
+            candidate = brace_match.group(0)
+            try:
+                json.loads(candidate)
+                return candidate
+            except Exception:
+                pass
         cleaned_json_string = re.sub(r'\n', '', cleaned_json_string)
         corrected_output = "{" + re.sub(r'[{}]', '', cleaned_json_string) + "}"
         return corrected_output

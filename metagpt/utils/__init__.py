@@ -6,7 +6,10 @@
 @File    : __init__.py
 """
 
-from metagpt.utils.read_document import read_docx
+try:
+    from metagpt.utils.read_document import read_docx
+except ImportError:
+    read_docx = None
 from metagpt.utils.singleton import Singleton
 from metagpt.utils.token_counter import (
     TOKEN_COSTS,

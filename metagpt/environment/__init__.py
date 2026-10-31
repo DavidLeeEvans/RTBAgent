@@ -3,11 +3,19 @@
 # @Desc   :
 
 from metagpt.environment.base_env import Environment
-from metagpt.environment.android_env.android_env import AndroidEnv
-from metagpt.environment.mincraft_env.mincraft_env import MincraftExtEnv
-from metagpt.environment.werewolf_env.werewolf_env import WerewolfEnv
-from metagpt.environment.stanford_town_env.stanford_town_env import StanfordTownEnv
-from metagpt.environment.software_env.software_env import SoftwareEnv
 
+__all__ = ["Environment"]
 
-__all__ = ["AndroidEnv", "MincraftExtEnv", "WerewolfEnv", "StanfordTownEnv", "SoftwareEnv", "Environment"]
+for _mod_name, _cls_name in [
+    ("metagpt.environment.android_env.android_env", "AndroidEnv"),
+    ("metagpt.environment.mincraft_env.mincraft_env", "MincraftExtEnv"),
+    ("metagpt.environment.werewolf_env.werewolf_env", "WerewolfEnv"),
+    ("metagpt.environment.stanford_town_env.stanford_town_env", "StanfordTownEnv"),
+    ("metagpt.environment.software_env.software_env", "SoftwareEnv"),
+]:
+    try:
+        _mod = __import__(_mod_name, fromlist=[_cls_name])
+        globals()[_cls_name] = getattr(_mod, _cls_name)
+        __all__.append(_cls_name)
+    except ImportError:
+        pass

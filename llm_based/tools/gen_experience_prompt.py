@@ -3,9 +3,12 @@ import asyncio
 import json
 import re
 import os
+from pathlib import Path
 import sys
 
-sys.path.append("/path/RTBAgent")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from metagpt.actions import Action
 from metagpt.logs import logger
@@ -30,7 +33,7 @@ Return your answer in the following JSON format:
 """
 
     name: str = "SummarizeAdjustmentReason"
-    max_try_num: int = 300
+    max_try_num: int = 5
 
     async def run(self, adjustment_list, reason_list):
         prompt = self.PROMPT_TEMPLATE.format(

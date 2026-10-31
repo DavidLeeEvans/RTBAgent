@@ -12,7 +12,7 @@ import json
 import re
 from typing import Optional, Union
 
-from openai import APIConnectionError, AsyncOpenAI, AsyncStream
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, AsyncStream, InternalServerError, RateLimitError
 from openai._base_client import AsyncHttpxClientWrapper
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -124,19 +124,39 @@ class OpenAILLM(BaseLLM):
         return kwargs
 
     async def _achat_completion(self, messages: list[dict], timeout=3) -> ChatCompletion:
-        kwargs = self._cons_kwargs(messages, timeout=timeout)
-        rsp: ChatCompletion = await self.aclient.chat.completions.create(**kwargs)
-        self._update_costs(rsp.usage)
-        return rsp
+        candidates = [self.model] + [
+            m for m in (getattr(self.config, "fallback_models", None) or []) if m != self.model
+        ]
+        last_err = None
+        for idx, candidate_model in enumerate(candidates):
+            kwargs = self._cons_kwargs(messages, timeout=timeout)
+            kwargs["model"] = candidate_model
+            try:
+                rsp: ChatCompletion = await self.aclient.chat.completions.create(**kwargs)
+                if candidate_model != self.model:
+                    logger.info(f"Switched active LLM model from {self.model} -> {candidate_model}")
+                    self.model = candidate_model
+                self._update_costs(rsp.usage)
+                return rsp
+            except (RateLimitError, InternalServerError, APITimeoutError) as err:
+                last_err = err
+                err_txt = str(err)
+                # If per-minute rate limit (not daily quota), pause briefly before trying next candidate
+                if "PerMinute" in err_txt and idx == len(candidates) - 1:
+                    import asyncio as _aio
+                    await _aio.sleep(6)
+                logger.warning(f"Model {candidate_model} hit {type(err).__name__}; rotating if fallback available.")
+                continue
+        raise last_err
 
     async def acompletion(self, messages: list[dict], timeout=3) -> ChatCompletion:
         return await self._achat_completion(messages, timeout=timeout)
 
     @retry(
-        wait=wait_random_exponential(min=1, max=60),
+        wait=wait_random_exponential(min=1, max=20),
         stop=stop_after_attempt(6),
         after=after_log(logger, logger.level("WARNING").name),
-        retry=retry_if_exception_type(APIConnectionError),
+        retry=retry_if_exception_type((APIConnectionError, APITimeoutError, InternalServerError, RateLimitError)),
         retry_error_callback=log_and_reraise,
     )
     async def acompletion_text(self, messages: list[dict], stream=False, timeout=3) -> str:
@@ -234,7 +254,10 @@ class OpenAILLM(BaseLLM):
 
     def get_choice_text(self, rsp: ChatCompletion) -> str:
         """Required to provide the first text of choice"""
-        return rsp.choices[0].message.content if rsp.choices else ""
+        txt = rsp.choices[0].message.content if rsp.choices and rsp.choices[0].message.content else ""
+        if "<thought>" in txt:
+            txt = re.sub(r"<thought>.*?</thought>\s*", "", txt, flags=re.DOTALL)
+        return txt
 
     def _calc_usage(self, messages: list[dict], rsp: str) -> CompletionUsage:
         usage = CompletionUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)

@@ -7,24 +7,22 @@
 """
 
 from metagpt.roles.role import Role
-from metagpt.roles.architect import Architect
-from metagpt.roles.project_manager import ProjectManager
-from metagpt.roles.product_manager import ProductManager
-from metagpt.roles.engineer import Engineer
-from metagpt.roles.qa_engineer import QaEngineer
-from metagpt.roles.searcher import Searcher
-from metagpt.roles.sales import Sales
-from metagpt.roles.customer_service import CustomerService
 
+__all__ = ["Role"]
 
-__all__ = [
-    "Role",
-    "Architect",
-    "ProjectManager",
-    "ProductManager",
-    "Engineer",
-    "QaEngineer",
-    "Searcher",
-    "Sales",
-    "CustomerService",
-]
+for _mod_name, _cls_name in [
+    ("metagpt.roles.architect", "Architect"),
+    ("metagpt.roles.project_manager", "ProjectManager"),
+    ("metagpt.roles.product_manager", "ProductManager"),
+    ("metagpt.roles.engineer", "Engineer"),
+    ("metagpt.roles.qa_engineer", "QaEngineer"),
+    ("metagpt.roles.searcher", "Searcher"),
+    ("metagpt.roles.sales", "Sales"),
+    ("metagpt.roles.customer_service", "CustomerService"),
+]:
+    try:
+        _mod = __import__(_mod_name, fromlist=[_cls_name])
+        globals()[_cls_name] = getattr(_mod, _cls_name)
+        __all__.append(_cls_name)
+    except ImportError:
+        pass

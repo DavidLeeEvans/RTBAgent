@@ -18,20 +18,27 @@ class HistorySummaryProvider(Action):
 
     @staticmethod
     def parse_output(rsp):
+        pattern = r"```json\s*(.*?)\s*```"
+        match = re.search(pattern, rsp, re.DOTALL)
+        if not match:
+            match = re.search(r"```\s*(.*?)\s*```", rsp, re.DOTALL)
+        code_text = match.group(1) if match else rsp
+        cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text).strip()
         try:
-            pattern = r"```json(.*)```"
-            match = re.search(pattern, rsp, re.DOTALL)
-            code_text = match.group(1) if match else rsp
-            cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text)
-            cleaned_json_string = re.sub(r'\n', '', cleaned_json_string)
-            corrected_output = "{" + re.sub(r'[{}]', '', cleaned_json_string) + "}"
-        except Exception as e:
-            pattern = r"```(.*?)```"
-            match = re.search(pattern, rsp, re.DOTALL)
-            code_text = match.group(1) if match else rsp
-            cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text)
-            cleaned_json_string = re.sub(r'\n', '', cleaned_json_string)
-            corrected_output = "{" + re.sub(r'[{}]', '', cleaned_json_string) + "}"
+            json.loads(cleaned_json_string)
+            return cleaned_json_string
+        except Exception:
+            pass
+        brace_match = re.search(r"\{.*\}", cleaned_json_string, re.DOTALL)
+        if brace_match:
+            candidate = brace_match.group(0)
+            try:
+                json.loads(candidate)
+                return candidate
+            except Exception:
+                pass
+        cleaned_json_string = re.sub(r'\n', '', cleaned_json_string)
+        corrected_output = "{" + re.sub(r'[{}]', '', cleaned_json_string) + "}"
         return corrected_output
 
     @staticmethod
@@ -53,7 +60,7 @@ class HistorySummaryProvider(Action):
 
     async def ask_llm_history_summary(self, llm_prompt):
         json_data_str = None
-        max_try_num = 200
+        max_try_num = 5
         try_num = 0
         while try_num < max_try_num:
             try_num += 1

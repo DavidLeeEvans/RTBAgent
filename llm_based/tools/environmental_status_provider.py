@@ -1,7 +1,6 @@
 # *_*coding:utf-8 *_*
 import os.path
 import pandas as pd
-from numpy import NaN
 
 
 class EnvironmentalStatusProvider:
@@ -48,30 +47,36 @@ class EnvironmentalStatusProvider:
             concat_df['datetime'] = pd.to_datetime(concat_df['datetime'], format='%Y-%m-%d-%H')
 
             concat_df_sorted = concat_df.sort_values(by='datetime', ascending=True)
-            concat_df_sorted['date'] = concat_df_sorted['datetime'].dt.year
+            concat_df_sorted['year'] = concat_df_sorted['datetime'].dt.year
             concat_df_sorted['month'] = concat_df_sorted['datetime'].dt.month
             concat_df_sorted['day'] = concat_df_sorted['datetime'].dt.day
             last_record = concat_df_sorted.iloc[-1]
-            concat_df_sorted_filter = concat_df_sorted[ (concat_df_sorted['day'] == last_record['day']) &
-                                                        (concat_df_sorted['month'] == last_record['month']) &
-                                                        (concat_df_sorted['day'] == last_record['day']) ]
-            environment_status['historical_traffic_num'] = concat_df_sorted_filter['traffic_num'].sum()
-            environment_status['historical_market_price_avg'] = concat_df_sorted_filter['market_price_sum'].sum() / concat_df_sorted_filter[
-                'traffic_num'].sum()
-            environment_status['historical_bid_price_avg'] = concat_df_sorted_filter['bid_price_sum'].sum() / concat_df_sorted_filter[
-                'traffic_num'].sum()
-            environment_status['historical_predict_ctr_avg'] = concat_df_sorted_filter['predict_click_num'].sum() / concat_df_sorted_filter[
-                'traffic_num'].sum()
-            environment_status['historical_ctr_avg'] = concat_df_sorted_filter['actual_click_num'].sum() / concat_df_sorted_filter[
-                'traffic_num'].sum()
-            environment_status['historical_win_rate_avg'] = concat_df_sorted_filter['win_num'].sum() / concat_df_sorted_filter['traffic_num'].sum()
+            concat_df_sorted_filter = concat_df_sorted[
+                (concat_df_sorted['year'] == last_record['year']) &
+                (concat_df_sorted['month'] == last_record['month']) &
+                (concat_df_sorted['day'] == last_record['day'])
+            ]
+            traffic_sum = float(concat_df_sorted_filter['traffic_num'].sum())
+            environment_status['historical_traffic_num'] = traffic_sum
+            if traffic_sum > 0:
+                environment_status['historical_market_price_avg'] = float(concat_df_sorted_filter['market_price_sum'].sum()) / traffic_sum
+                environment_status['historical_bid_price_avg'] = float(concat_df_sorted_filter['bid_price_sum'].sum()) / traffic_sum
+                environment_status['historical_predict_ctr_avg'] = float(concat_df_sorted_filter['predict_click_num'].sum()) / traffic_sum
+                environment_status['historical_ctr_avg'] = float(concat_df_sorted_filter['actual_click_num'].sum()) / traffic_sum
+                environment_status['historical_win_rate_avg'] = float(concat_df_sorted_filter['win_num'].sum()) / traffic_sum
+            else:
+                environment_status['historical_market_price_avg'] = 0.0
+                environment_status['historical_bid_price_avg'] = 0.0
+                environment_status['historical_predict_ctr_avg'] = 0.0
+                environment_status['historical_ctr_avg'] = 0.0
+                environment_status['historical_win_rate_avg'] = 0.0
 
 
         environment_status_text=""
         for key in environment_status.keys():
-            if environment_status[key] == NaN:
-                environment_status[key] = 0
-            text = "- {key}:{content}\n".format(key=key, content=round(environment_status[key],5))
+            if pd.isna(environment_status[key]):
+                environment_status[key] = 0.0
+            text = "- {key}:{content}\n".format(key=key, content=round(float(environment_status[key]),5))
             environment_status_text += text
 
         return environment_status_text

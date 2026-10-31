@@ -133,7 +133,16 @@ class RTBAgent(Role):
         train_experiences_json_path refers to a JSON file containing simulated bidding experiences, generated based on training data. 
         The data format follows the structure defined in the gen_initial_info() function.
         """
-        experiences_prompt = await generate_experience_prompt("train_experiences_json_path",self.advertiser_id, self.budget_ratio, api_name=os.environ['MY_API_PARAM'] )
+        train_experiences_root = kwargs.get(
+            "train_experiences_json_path",
+            os.path.join(self.workspace_root, "train_experiences"),
+        )
+        experiences_prompt = await generate_experience_prompt(
+            train_experiences_root,
+            self.advertiser_id,
+            self.budget_ratio,
+            api_name=os.environ.get("MY_API_PARAM", "gemini"),
+        )
         data_analysis_text, data_analysis_json = await self.get_data_analysis(
             history=history+"\n"+experiences_prompt,
             bidding_reference=bidding_reference,

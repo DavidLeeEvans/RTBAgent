@@ -158,7 +158,7 @@ class DailySummary(Action):
     """
 
     max_try_num: int = 4
-    log_directory: str = "/experiment_data/train/report_fail_mess"
+    log_directory: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "workspace", "report_fail_mess")
 
     def gen_daily_summary(self, info_dict: dict):
         traffic_info, bidding_behavior = gen_initial_info(info_dict)

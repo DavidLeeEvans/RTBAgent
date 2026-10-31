@@ -1,19 +1,24 @@
 # *_*coding:utf-8 *_*
 import json
+import os
 import os.path
+from pathlib import Path
 import numpy as np
 import pulp
 import pandas as pd
 from tqdm import tqdm
-import  sys
-sys.path.append("/path/RTBAgent")
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 from tools.utils import find_w0_star
 
 
 
-def generate_checkpoint(timeflag, adv_id=None):
-    data_root = '/path/RTBAgent/ipinyouData/new_all'
-    checkpoint_root = '/path/RTBAgent/checkpoint'
+def generate_checkpoint(timeflag, adv_id=None, data_root=None, checkpoint_root=None):
+    data_root = str(data_root or os.getenv("RTB_DATA_ROOT", str(PROJECT_ROOT / "ipinyouData" / "new_all")))
+    checkpoint_root = str(checkpoint_root or os.getenv("RTB_CHECKPOINT_ROOT", str(PROJECT_ROOT / "checkpoint")))
     check_date = {
         "1458": "20130606",
         "3358": "20130606",
@@ -88,8 +93,8 @@ def generate_checkpoint(timeflag, adv_id=None):
 
 class FpBidderTrain:
     introduction :str = """The concept of FpBidder is It is a bidding method based on linear programming modeling, which solves the problem of maximizing profits under fixed budget constraints and learns optimal parameters from historical data. In the subsequent bidding process, the parameters will be fixed to the calculated optimal value. However, when the online environment is highly dynamic, the effect will be slightly affected."""
-    def __init__(self, advertiser_id:str ,budget_ratio:str):
-        self.checkpoint_root = '/path/RTBAgent/checkpoint'
+    def __init__(self, advertiser_id:str ,budget_ratio:str, checkpoint_root: str = None):
+        self.checkpoint_root = str(checkpoint_root or os.getenv("RTB_CHECKPOINT_ROOT", str(PROJECT_ROOT / "checkpoint")))
         self.json_data_path  = os.path.join(self.checkpoint_root,'train_bid','fp_bid',"checkpoint.json")
         if os.path.exists(self.json_data_path):
             with open(self.json_data_path, "r", encoding='utf8') as fp:

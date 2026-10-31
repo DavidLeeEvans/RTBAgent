@@ -39,7 +39,7 @@ Please return it in the following JSON format with NO other texts :
 """
 
     name: str = "Reflect"
-    max_try_num: int = 300
+    max_try_num: int = 5
 
     async def run(self,
                   role_prompt,
@@ -50,6 +50,7 @@ Please return it in the following JSON format with NO other texts :
             history=history
         )
         print(prompt)
+        json_data_str = None
         try_num = 0
         while try_num < self.max_try_num:
             try_num += 1
@@ -68,21 +69,31 @@ Please return it in the following JSON format with NO other texts :
             except Exception as e:
                 logger.exception(e)
 
+        if json_data_str is None or not self.check_data_integrity_and_types(json_data_str):
+            return {
+                "evaluation_of_bid_results": "Default evaluation fallback.",
+                "data_analysis_accuracy": "Default accuracy fallback.",
+                "policy_adjustment_suggestions": "Maintain balanced pacing.",
+                "improvement_measures": "Continue monitoring win rate and CPC.",
+            }
         return json.loads(json_data_str)
 
     @staticmethod
     def parse_output(rsp):
+        pattern = r"```json\s*(.*?)\s*```"
+        match = re.search(pattern, rsp, re.DOTALL)
+        if not match:
+            match = re.search(r"```\s*(.*?)\s*```", rsp, re.DOTALL)
+        code_text = match.group(1) if match else rsp
+        cleaned = re.sub(r",\s*(?=[}\]])", "", code_text).strip()
         try:
-            pattern = r"```json(.*)```"
-            match = re.search(pattern, rsp, re.DOTALL)
-            code_text = match.group(1) if match else rsp
-            data = json.loads(code_text)
-        except Exception as e:
-            pattern = r"```(.*?)```"
-            match = re.search(pattern, rsp, re.DOTALL)
-            code_text = match.group(1) if match else rsp
-            data = json.loads(code_text)
-        return code_text
+            json.loads(cleaned)
+            return cleaned
+        except Exception:
+            brace_match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+            if brace_match:
+                return brace_match.group(0)
+            return cleaned
 
     @staticmethod
     def check_data_integrity_and_types(json_data):

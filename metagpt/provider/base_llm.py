@@ -109,8 +109,10 @@ class BaseLLM(ABC):
         format_msgs: Optional[list[dict[str, str]]] = None,
         images: Optional[Union[str, list[str]]] = None,
         timeout=3,
-        stream=True,
+        stream: Optional[bool] = None,
     ) -> str:
+        if stream is None:
+            stream = getattr(self.config, "stream", False)
         if system_msgs:
             message = self._system_msgs(system_msgs)
         else:

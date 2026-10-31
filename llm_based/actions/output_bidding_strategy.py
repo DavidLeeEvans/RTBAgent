@@ -41,7 +41,7 @@ Please output the "adjustment" you have selected and explain the reason with a m
 
 
     name: str = "OutputBiddingStrategy"
-    max_try_num:int = 1000
+    max_try_num: int = 5
 
     async def run(self,
                   role_prompt,
@@ -79,23 +79,38 @@ Please output the "adjustment" you have selected and explain the reason with a m
             except Exception as e:
                 logger.exception(f"{e}")
 
-        if json_data_str is None:
+        if json_data_str is None or not self.check_data_integrity_and_types(json_data_str):
             return {
                 "adjustment": 0.0000,
                 "reason": "default value"
             }
         else:
             tmp_out = json.loads(json_data_str)
-            tmp_out["adjustment"] = round(tmp_out["adjustment"], 4)
+            tmp_out["adjustment"] = round(float(tmp_out["adjustment"]), 4)
             return tmp_out
 
     @staticmethod
     def parse_output(rsp):
-        pattern = r"```json(.*)```"
+        pattern = r"```json\s*(.*?)\s*```"
         match = re.search(pattern, rsp, re.DOTALL)
+        if not match:
+            match = re.search(r"```\s*(.*?)\s*```", rsp, re.DOTALL)
         code_text = match.group(1) if match else rsp
-        cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text)           # 排除最后一个键值对后有非法','号
-        cleaned_json_string = re.sub(r'\n', '', cleaned_json_string)            # 暴力排除非法“\n”
+        cleaned_json_string = re.sub(r",\s*(?=[}\]])", "", code_text).strip()
+        try:
+            json.loads(cleaned_json_string)
+            return cleaned_json_string
+        except Exception:
+            pass
+        brace_match = re.search(r"\{.*\}", cleaned_json_string, re.DOTALL)
+        if brace_match:
+            candidate = brace_match.group(0)
+            try:
+                json.loads(candidate)
+                return candidate
+            except Exception:
+                pass
+        cleaned_json_string = re.sub(r'\n', '', cleaned_json_string)
         corrected_output = "{" + re.sub(r'[{}]', '', cleaned_json_string) + "}"
         return corrected_output
 
@@ -112,10 +127,10 @@ Please output the "adjustment" you have selected and explain the reason with a m
             if key not in data:
                 return False
 
-        if not isinstance(data["adjustment"], float):
+        if isinstance(data["adjustment"], bool) or not isinstance(data["adjustment"], (int, float)):
             return False
 
-        if data["adjustment"]<-0.5 or data["adjustment"]>0.5:
+        if float(data["adjustment"]) < -0.5 or float(data["adjustment"]) > 0.5:
             return False
 
         if not isinstance(data["reason"], str):

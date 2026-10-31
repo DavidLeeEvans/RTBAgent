@@ -91,28 +91,26 @@ class Config(CLIParams, YamlModel):
         - Priority: env < default_config_paths
         - Inside default_config_paths, the latter one overwrites the former one
         """
-        llm_config_list = "/path/RTBAgent/config/llm_config_list.yaml"
-        # 读取配置文件
+        llm_config_list = CONFIG_ROOT / "llm_config_list.yaml"
+        tem_config = {}
         try:
-            with open(llm_config_list, 'r') as file:
+            with open(llm_config_list, "r", encoding="utf-8") as file:
                 config_list = yaml.safe_load(file) or {}
-                api_name = os.getenv('MY_API_PARAM')
-                tem_config = {}
-                tem_config['llm'] = config_list.get(f"{api_name}", {})
-                # print(tem_config)
+                api_name = os.getenv("MY_API_PARAM")
+                raw_llm_cfg = dict(config_list.get(f"{api_name}", {}) or {})
+                for k, v in list(raw_llm_cfg.items()):
+                    if isinstance(v, str):
+                        expanded = os.path.expandvars(v)
+                        raw_llm_cfg[k] = expanded
+                if not raw_llm_cfg.get("api_key"):
+                    raw_llm_cfg.setdefault("api_key", "sk-placeholder-offline")
+                tem_config["llm"] = raw_llm_cfg
         except FileNotFoundError:
-            tem_config = {}
+            tem_config = {"llm": {"api_key": "sk-placeholder-offline"}}
 
-        # default_config_paths: List[Path] = [
-        #     METAGPT_ROOT / "config/config2.yaml",
-        #     CONFIG_ROOT / "config2.yaml",
-        # ]
-        # print("read config!!!!!!!!!!!!!!!!!!!")
         dicts = [dict(os.environ)]
-        # dicts += [Config.read_yaml(path) for path in default_config_paths]
         dicts += [tem_config, tem_config]
         final = merge_dict(dicts)
-        # print(final)
         return Config(**final)
 
     @classmethod
